@@ -73,9 +73,6 @@ int http_response_dump(struct HttpResponse *httpResponse)
 
 int http_response_parse(const char *httpRawData, struct HttpResponse *httpResponse)
 {
-    int i = 0;
-    int j = 0;
-
     char *value = NULL;
 
     // get content_length
@@ -85,21 +82,13 @@ int http_response_parse(const char *httpRawData, struct HttpResponse *httpRespon
 
     // if support ranges
     http_response_header_get_value(httpRawData, ACCEPT_RANGES, &value);
-    if (strcmp(value, "bytes") == 0)
-    {
-        httpResponse->accept_ranges = true;
-    }
-    else
-    {
-        httpResponse->accept_ranges = false;
-    }
+    httpResponse->accept_ranges = strcmp(value, "bytes") == 0 ? true : false;
     free(value);
 
     // get content
     char *content = NULL;
     content = strstr(httpRawData, HTTP_BODY_CONTENT);
     content += 4;
-
     httpResponse->content = content;
 
     return 0;

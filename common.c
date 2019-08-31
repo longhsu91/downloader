@@ -2,7 +2,7 @@
 
 void local_write_to_disk(FILE *fp, int offset, const char *buf, int length)
 {
-    int cur = fseek(fp, offset, SEEK_SET);
+    fseek(fp, offset, SEEK_SET);
     fwrite(buf, length, 1, fp);
     fflush(fp);
 }

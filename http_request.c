@@ -2,6 +2,8 @@
 
 #include <sys/socket.h>
 
+extern int http_response_header_get_value(const char *httpRawData, int key, char **value);
+
 /**
  * response should be free after use
  */
@@ -11,13 +13,12 @@ int http_request_do(int socket_fd, const char *request, char **response)
     char *find = NULL;
     char *p = buf;
 
-    int i = 0;
-    int j = 0;
-    char length[10];
-
     int n = 0;
     int pos = 0;
     int nread = 0;
+
+    char *value = NULL;
+    int length = 0;
 
     // send request to server
     send(socket_fd, request, strlen(request), 0);
@@ -39,23 +40,12 @@ int http_request_do(int socket_fd, const char *request, char **response)
     }
 
     // find content_length
-    find = strstr(buf, HTTP_HEADER_CONTENT_LENGTH);
-    find = strstr(find, HTTP_HEADER_BLANK);
-
-    while (find[i] != '\r')
-    {
-        if (find[i] == ' ')
-        {
-            i++;
-            continue;
-        }
-
-        length[j++] = find[i++];
-    }
-    length[j] = '\0';
+    http_response_header_get_value(buf, CONTENT_LENGTH, &value);
+    length = atoi(value);
+    free(value);
 
     // get left content
-    int nleft = atoi(length) - (nread - (pos + 4));
+    int nleft = length - (nread - (pos + 4));
     while (nleft > 0)
     {
         if ((n = recv(socket_fd, p, 1024, 0)) > 0)
