@@ -52,13 +52,6 @@ struct HttpRequest
     PFreeRequest freeRequest;
 };
 
-struct Task
-{
-    void *fp;
-    int offset;
-    struct HttpRequest *request;
-};
-
 /**
  * response should be free after use
  */

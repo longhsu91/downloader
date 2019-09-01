@@ -55,7 +55,7 @@ const char *toString(struct HttpRequest *this)
     memcpy(buf + strlen(this->pre_header) + strlen(ranges_str), "\r\n", 2);
     buf[size] = '\0';
 
-    printf("buf is [%s]", buf);
+    //printf("buf is [%s]", buf);
 
     this->request = buf;
 

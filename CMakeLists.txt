@@ -15,6 +15,8 @@ set(${PROJECT_NAME}_sources
     common.c
     http_response.c
     http_request.c
+    manager.c
+    task.c
 )
 
 # executable

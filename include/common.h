@@ -17,15 +17,19 @@
 
 #define HTTP_BODY_CONTENT "\r\n\r\n"
 
+#define SEGMENT_SIZE 1000
+
 enum HttpHeaderKey
 {
     ACCEPT_RANGES,
     CONTENT_LENGTH,
 };
 
-struct Manager
+struct Segment
 {
-    void *fp;
+    int index;
+    int begin;
+    int end;
 };
 
 void local_write_to_disk(FILE *fp, int offset, const char *buf, int length);
