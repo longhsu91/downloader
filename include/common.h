@@ -28,28 +28,6 @@ struct Manager
     void *fp;
 };
 
-struct HttpRequest
-{
-    const char *request;
-};
-
-struct HttpResponse
-{
-    const char *raw; // point to http raw date
-
-    bool accept_ranges;
-    int content_length;
-
-    const char *content;
-};
-
-struct Task
-{
-    void *fp;
-    int offset;
-    struct HttpRequest request;
-};
-
 void local_write_to_disk(FILE *fp, int offset, const char *buf, int length);
 char *d_strstr(const char *buf, const char *needle, int *_pos);
 

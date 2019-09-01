@@ -10,20 +10,6 @@
 #include <errno.h>
 #include <strings.h>
 
-const char *request1 = "GET /img/bd_logo1.png HTTP/1.1\r\n\
-Host: www.baidu.com\r\n\
-User-Agent: curl/7.47.0\r\n\
-Range: bytes=0-1024\r\n\
-Accept: */*\r\n\
-\r\n";
-
-const char *request2 = "GET /img/bd_logo1.png HTTP/1.1\r\n\
-Host: www.baidu.com\r\n\
-User-Agent: curl/7.47.0\r\n\
-Accept: */*\r\n\
-Range: bytes=1025-\r\n\
-\r\n";
-
 void *task_thread(void *arg)
 {
     struct sockaddr_in server_addr;
@@ -50,21 +36,24 @@ void *task_thread(void *arg)
     }
 
     struct Task *task = (struct Task *)arg;
-    const char *http_request = task->request.request;
+    struct HttpRequest *http_request = task->request;
     FILE *fp = task->fp;
     int offset = task->offset;
 
-    struct HttpResponse http_response;
     char *http_response_raw_data = NULL;
+    http_request_do(socket_fd, http_request->toString(http_request), &http_response_raw_data);
+    http_request->freeRequest(http_request);
 
-    http_request_do(socket_fd, http_request, &http_response_raw_data);
+    struct HttpResponse *http_response = NULL;
+    NewHttpResponse(&http_response);
+    http_response->setRaw(http_response, http_response_raw_data);
+    http_response->parse(http_response);
+    http_response->dump(http_response);
 
-    http_response_parse(http_response_raw_data, &http_response);
+    local_write_to_disk(fp, offset, http_response->getContent(http_response), http_response->getContentLength(http_response));
 
-    http_response_dump(&http_response);
-
-    local_write_to_disk(fp, offset, http_response.content, http_response.content_length);
-
+    // free
+    http_response->freeResponse(http_response);
     free(http_response_raw_data);
 
     return NULL;
@@ -82,12 +71,18 @@ int main(int argc, char **argv)
     manager.fp = fp;
 
     struct Task task[2];
+    struct HttpRequest *request1 = NULL;
+    struct HttpRequest *request2 = NULL;
+    NewHttpRequest(&request1);
+    request1->setRanges(request1, 0, 1024);
     task[0].fp = fp;
-    task[0].request.request = request1;
+    task[0].request = request1;
     task[0].offset = 0;
 
+    NewHttpRequest(&request2);
+    request2->setRanges(request2, 1025, -1);
     task[1].fp = fp;
-    task[1].request.request = request2;
+    task[1].request = request2;
     task[1].offset = 1025;
 
     pthread_create(&thread[0], NULL, task_thread, (void *)&task[0]);

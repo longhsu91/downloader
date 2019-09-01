@@ -1,6 +1,74 @@
 #include "http_response.h"
 
-const char *http_response_header_key_to_str(int key)
+void NewHttpResponse(struct HttpResponse **httpResponse)
+{
+    struct HttpResponse *response = (struct HttpResponse *)malloc(sizeof(struct HttpResponse));
+    response->_this = response;
+    response->raw = NULL;
+
+    response->setRaw = setRaw;
+
+    response->setAcceptRanges = setAcceptRanges;
+    response->getAcceptRanges = getAcceptRanges;
+    response->setContentLength = setContentLength;
+    response->getContentLength = getContentLength;
+    response->setContent = setContent;
+    response->getContent = getContent;
+
+    response->dump = dump;
+    response->parse = parse;
+    response->freeResponse = freeResponse;
+
+    *httpResponse = response;
+}
+
+void setRaw(struct HttpResponse *this, const char *httpRawData)
+{
+    this->raw = httpRawData;
+}
+
+void setAcceptRanges(struct HttpResponse *this, const char *acceptRanges)
+{
+    this->accept_ranges = strcmp(acceptRanges, "bytes") == 0 ? true : false;
+}
+bool getAcceptRanges(struct HttpResponse *this)
+{
+    return this->accept_ranges;
+}
+
+void setContentLength(struct HttpResponse *this, const char *contentLength)
+{
+    this->content_length = atoi(contentLength);
+}
+
+int getContentLength(struct HttpResponse *this)
+{
+    return this->content_length;
+}
+
+void setContent(struct HttpResponse *this, const char *content)
+{
+    this->content = content;
+}
+const char *getContent(struct HttpResponse *this)
+{
+    return this->content;
+}
+
+void freeResponse(struct HttpResponse *this)
+{
+    if (this != NULL)
+    {
+        if (this->_this != NULL)
+        {
+            free(this->_this);
+            this->_this = NULL;
+        }
+        this = NULL;
+    }
+}
+
+const char *headerKeyToStr(int key)
 {
     const char *str = NULL;
 
@@ -27,14 +95,14 @@ const char *http_response_header_key_to_str(int key)
     return str;
 }
 
-int http_response_header_get_value(const char *httpRawData, int key, char **value)
+int headerGetValue(const char *httpRawData, int key, char **value)
 {
     char *find = NULL;
     char *buf = NULL;
     int begin = 0;
     int length = 0;
 
-    const char *key_str = http_response_header_key_to_str(key);
+    const char *key_str = headerKeyToStr(key);
 
     find = d_strstr(httpRawData, key_str, &begin);
     find = d_strstr(find, HTTP_HEADER_BLANK, &length);
@@ -63,33 +131,33 @@ int http_response_header_get_value(const char *httpRawData, int key, char **valu
     return 0;
 }
 
-int http_response_dump(struct HttpResponse *httpResponse)
+int dump(struct HttpResponse *this)
 {
-    printf("content_length: %d\n", httpResponse->content_length);
-    printf("accept_ranges: %s\n", httpResponse->accept_ranges == true ? "true" : "false");
+    printf("content_length: %d\n", this->getContentLength(this));
+    printf("accept_ranges: %d\n", this->getAcceptRanges(this));
 
     return 0;
 }
 
-int http_response_parse(const char *httpRawData, struct HttpResponse *httpResponse)
+int parse(struct HttpResponse *this)
 {
     char *value = NULL;
 
     // get content_length
-    http_response_header_get_value(httpRawData, CONTENT_LENGTH, &value);
-    httpResponse->content_length = atoi(value);
+    headerGetValue(this->raw, CONTENT_LENGTH, &value);
+    this->setContentLength(this, value);
     free(value);
 
     // if support ranges
-    http_response_header_get_value(httpRawData, ACCEPT_RANGES, &value);
-    httpResponse->accept_ranges = strcmp(value, "bytes") == 0 ? true : false;
+    headerGetValue(this->raw, ACCEPT_RANGES, &value);
+    this->setAcceptRanges(this, value);
     free(value);
 
     // get content
     char *content = NULL;
-    content = strstr(httpRawData, HTTP_BODY_CONTENT);
+    content = strstr(this->raw, HTTP_BODY_CONTENT);
     content += 4;
-    httpResponse->content = content;
+    this->setContent(this, content);
 
     return 0;
 }
